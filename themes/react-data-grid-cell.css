@@ -182,9 +182,14 @@
 }
 
 .rdg-cell-expand {
-    top: 0px;
-    right: 20px;
+    /*top: 0px;*/
+    /* PHIL: changed the position to left */
+    /*right: 20px;
+    left: 0px;
     position: absolute;
+    */
+    float: left;
+    margin-left: -1em;
     cursor: pointer;
 }
 
