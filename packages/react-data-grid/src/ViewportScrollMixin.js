@@ -115,11 +115,16 @@ module.exports = {
     let isScrolling = true;
     this.resetScrollStateAfterDelay();
 
-    let renderedRowsCount = ceil(height / rowHeight);
+    // PHIL: in case of variable row height, render everything!
+    // Note that this only works with the Darwino grid as the rowRenderer has a special function for this
+    // This could be removed when the react-data-grid will support variable rowHeight
+    let renderAllRows = this.props.cellMetaData.grid.props.renderAllRows;
+    
+    let renderedRowsCount = renderAllRows ? length : ceil(height / rowHeight);
 
-    let visibleStart = max(0, floor(scrollTop / rowHeight));
+    let visibleStart = renderAllRows ? 0 : max(0, floor(scrollTop / rowHeight));
 
-    let visibleEnd = min(visibleStart + renderedRowsCount, length);
+    let visibleEnd = renderAllRows ? length : min(visibleStart + renderedRowsCount, length);
 
     let displayStart = max(0, visibleStart - this.props.overScan.rowsStart);
 

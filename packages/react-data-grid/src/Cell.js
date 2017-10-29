@@ -466,13 +466,16 @@ const Cell = React.createClass({
       props.dependentValues = this.getFormatterDependencies();
       CellContent = React.cloneElement(Formatter, props);
     } else if (isFunction(Formatter)) {
-      CellContent = <Formatter value={this.props.value} dependentValues={this.getFormatterDependencies()} />;
+      // PHIL added the row data here and the col idx
+      CellContent = <Formatter value={this.props.value} dependentValues={this.getFormatterDependencies()} row={this.getRowData()} idx={this.props.idx}/>;
     } else {
       CellContent = <SimpleCellFormatter value={this.props.value} />;
     }
+    // PHIL
+    // we add +15 to the marginleft to let the twisty display. else, it is pushed outside on the left side
     let isExpandCell = this.props.expandableOptions ? this.props.expandableOptions.field === this.props.column.key : false;
     let treeDepth = this.props.expandableOptions ? this.props.expandableOptions.treeDepth : 0;
-    let marginLeft = this.props.expandableOptions && isExpandCell ? (this.props.expandableOptions.treeDepth) * 30+15 : 0;
+    let marginLeft = this.props.expandableOptions && isExpandCell ? (this.props.expandableOptions.treeDepth) * 20 + 15: 0;
     let cellExpander;
     let cellDeleter;
     if (this.canExpand()) {
@@ -501,7 +504,10 @@ const Cell = React.createClass({
       value: this.props.value,
       column: this.props.column,
       rowIdx: this.props.rowIdx,
-      isExpanded: this.props.isExpanded
+      isExpanded: this.props.isExpanded,
+      // PHIL: added these new 2 properties
+      idx: this.props.idx,
+      row: this.getRowData()      
     });
 
     let dragHandle = (!this.isActive() && ColumnUtils.canEdit(this.props.column, this.props.rowData, this.props.cellMetaData.enableCellSelect)) ? <div className="drag-handle" draggable="true" onDoubleClick={this.onDragHandleDoubleClick}><span style={{ display: 'none' }}></span></div> : null;

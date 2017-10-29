@@ -890,6 +890,8 @@ const ReactDataGrid = React.createClass({
 
   render() {
     let cellMetaData = {
+      // PHIL: Added the grid here!
+      grid: this,
       rowKey: this.props.rowKey,
       selected: this.state.selected,
       dragged: this.state.dragged,
