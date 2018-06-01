@@ -1,5 +1,6 @@
 const Enzyme = require('enzyme');
 const React = require('react');
+import PropTypes from 'prop-types';
 
 const ContainerEditorWrapper = require('../ContainerEditorWrapper');
 
@@ -14,7 +15,7 @@ class FakeContainer extends React.Component {
 }
 
 FakeContainer.propTypes = {
-  refCallback: React.PropTypes.func.IsRequired
+  refCallback: PropTypes.func.IsRequired
 };
 
 describe('ContainerEditorWrapper', () => {
@@ -38,8 +39,8 @@ describe('ContainerEditorWrapper', () => {
         const renderedComp = Enzyme.mount(<ConnectedContainerEditorWrapper />);
 
         // ASSERT
-        let redneredContainerEditorWrapper = renderedComp.find('ContainerEditorWrapper').node;
-        let renderedFakeComponent = renderedComp.find('FakeComponent').node;
+        let redneredContainerEditorWrapper = renderedComp.find('ContainerEditorWrapper').instance();
+        let renderedFakeComponent = renderedComp.find('FakeComponent').instance();
         redneredContainerEditorWrapper.getValue();
 
         expect(renderedComp).toBeDefined();
@@ -54,8 +55,8 @@ describe('ContainerEditorWrapper', () => {
         const renderedComp = Enzyme.mount(<ConnectedContainerEditorWrapper />);
 
         // ASSERT
-        let redneredContainerEditorWrapper = renderedComp.find('ContainerEditorWrapper').node;
-        let renderedFakeComponent = renderedComp.find('FakeComponent').node;
+        let redneredContainerEditorWrapper = renderedComp.find('ContainerEditorWrapper').instance();
+        let renderedFakeComponent = renderedComp.find('FakeComponent').instance();
         redneredContainerEditorWrapper.getInputNode();
 
         expect(renderedComp).toBeDefined();

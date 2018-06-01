@@ -1,4 +1,4 @@
-import keyMirror from 'fbjs/lib/keyMirror';
+import keyMirror from 'keymirror';
 
 const constants = {
   UpdateActions: keyMirror({
@@ -12,7 +12,7 @@ const constants = {
   },
   CellExpand: {
     DOWN_TRIANGLE: String.fromCharCode('9660'),
-    RIGHT_TRIANGLE: String.fromCharCode('9658')
+    RIGHT_TRIANGLE: String.fromCharCode('9654')
   }
 };
 

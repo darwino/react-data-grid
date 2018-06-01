@@ -1,6 +1,5 @@
-import TestUtils from 'react-addons-test-utils';
+import TestUtils from 'react-dom/test-utils';
 import GridRunner from './GridRunner';
-import ReactDOM from 'react-dom';
 
 describe('Grid Integration', () => {
   let gridRunner;
@@ -47,11 +46,11 @@ describe('Grid Integration', () => {
       gridRunner.selectCell({cellIdx: firstCellIdx, rowIdx: 1}).copy();
 
       let firstCell = gridRunner.getCell({cellIdx: firstCellIdx, rowIdx: 1});
-      expect(ReactDOM.findDOMNode(firstCell.node).className.indexOf('copied') > -1).toBe(true);
+      expect(firstCell.getDOMNode().className.indexOf('copied') > -1).toBe(true);
 
       gridRunner.selectCell({cellIdx: 4, rowIdx: 1})
       .copy();
-      expect(ReactDOM.findDOMNode(firstCell.node).className.indexOf('copied') > -1).toBe(false);
+      expect(firstCell.getDOMNode().className.indexOf('copied') > -1).toBe(false);
     });
   });
 
@@ -107,20 +106,27 @@ describe('Grid Integration', () => {
 
     it('Start editing by pressing a key', () => {
       const letterEKeyCode = 69;
-      gridRunner.selectCell({rowIdx: 3, cellIdx: 5})
+      const coords = {rowIdx: 3, cellIdx: 5};
+      gridRunner.selectCell(coords)
         .keyDown({
           keyCode: letterEKeyCode
         }, gridRunner.cell )
+        .resetCell(coords)
         .isEditable()
+        .resetCell(coords)
         .keyDown({key: 'Enter'})
+        .resetCell(coords)
         .hasCommitted('E') // keydown ALWAYS upper case http://stackoverflow.com/questions/2263889/why-always-uppercase-in-my-code
         .isNotEditable()
         .dispose();
     });
 
     it('Start editing by pressing enter', () => {
-      gridRunner.selectCell({rowIdx: 3, cellIdx: 5})
+      const coords = {rowIdx: 3, cellIdx: 5};
+      gridRunner.selectCell(coords)
+        .resetCell(coords)
         .keyDown({key: 'Enter'}, gridRunner.cell)
+        .resetCell(coords)
         .isEditable()
         .dispose();
     });
@@ -146,6 +152,7 @@ describe('Grid Integration', () => {
     it('should commit editor changes on blur', () => {
       gridRunner = new GridRunner({});
       gridRunner.clickIntoEditor({ rowIdx: 3, cellIdx: 5})
+        .resetCell({ rowIdx: 3, cellIdx: 5})
         .setValue('Test')
         .selectCell({ rowIdx: 4, cellIdx: 3 })
         .selectCell({ rowIdx: 3, cellIdx: 5 })
@@ -155,9 +162,13 @@ describe('Grid Integration', () => {
 
     it('Arrow Left doesnt commit your change if you are not at the start of the text', () => {
       gridRunner = new GridRunner({renderIntoBody: true});
-      gridRunner.clickIntoEditor({rowIdx: 3, cellIdx: 4})
+      const coords = {rowIdx: 3, cellIdx: 4};
+      gridRunner.clickIntoEditor(coords)
+        .resetCell(coords)
         .setValue('Test')
+        .resetCell(coords)
         .setCursor(2)
+        .resetCell(coords)
         .keyDown({key: 'ArrowLeft'})
         .isEditable()
         // Need to escape the editor here since dispose will prompt componentWillUnmount,
@@ -178,10 +189,15 @@ describe('Grid Integration', () => {
 
     it('Arrow Right commits your change when you are at the end of the text', () => {
       gridRunner = new GridRunner({renderIntoBody: true});
-      gridRunner.clickIntoEditor({rowIdx: 3, cellIdx: 4})
+      const coords = {rowIdx: 3, cellIdx: 4};
+      gridRunner.clickIntoEditor(coords)
+        .resetCell(coords)
         .setValue('Test')
+        .resetCell(coords)
         .setCursor(4)
+        .resetCell(coords)
         .keyDown({key: 'ArrowRight'})
+        .resetCell(coords)
         .hasCommitted('Test')
         .hasSelected({rowIdx: 3, cellIdx: 5})
         .dispose();
@@ -189,9 +205,13 @@ describe('Grid Integration', () => {
 
     it('Arrow Right doesnt commit your change when you are not at the end of the text', () => {
       gridRunner = new GridRunner({renderIntoBody: true});
-      gridRunner.clickIntoEditor({rowIdx: 3, cellIdx: 4})
+      const coords = {rowIdx: 3, cellIdx: 4};
+      gridRunner.clickIntoEditor(coords)
+        .resetCell(coords)
         .setValue('Test')
+        .resetCell(coords)
         .setCursor(2)
+        .resetCell(coords)
         .keyDown({key: 'ArrowRight'})
         .isEditable()
         // Need to escape the editor here since dispose will prompt componentWillUnmount,
@@ -216,41 +236,6 @@ describe('Grid Integration', () => {
         ev: {key: 'ArrowDown'},
         expectToSelect: {row: 4, cell: 4}
       });
-    });
-  });
-
-  describe('Context Menu', () => {
-    let fakeRowIdx = 3;
-    let fakeIdx = 5;
-
-    it('should show context menu on right click', () => {
-      gridRunner.rightClickCell({cellIdx: fakeIdx, rowIdx: fakeRowIdx});
-      expect(gridRunner.isContextMenuVisible()).toEqual(true);
-    });
-
-    it('should hide context menu on selecting menu item', () => {
-      gridRunner.clickContextMenuLink();
-      expect(gridRunner.isContextMenuVisible()).toEqual(false);
-    });
-
-    // Please note: this test will fail if the MenuItem's inner text in example14-all-features-immutable is changed.
-    it('should get row and column indexes from context menu', () => {
-      gridRunner.rightClickCell({cellIdx: fakeIdx, rowIdx: fakeRowIdx});
-      let menuItem = gridRunner.getContextMenuItem();
-      // Using this alternative for firefox tests
-      let menuItemValue = menuItem.innerText !== undefined ? menuItem.innerText : menuItem.textContent;
-      let idxs = menuItemValue.split(',');
-      expect(fakeRowIdx).toEqual(parseInt(idxs[0], 10));
-      expect(fakeIdx).toEqual(parseInt(idxs[1], 10));
-    });
-
-    // In ContextMenuWrapper's componentWillReceiveProps the function getMenuPosition is called with a delay
-    // (window.requestAnimationFrame || setTimeout). This causes timing issues when you have both 'right click on cell' (open menu)
-    // and 'click on menu item' (close menu) in the same test. To avoid this we need to close the menu after each right click
-    // in a separate test.
-    xit('should hide context menu', () => {
-      gridRunner.clickContextMenuLink();
-      expect(gridRunner.isContextMenuVisible()).toEqual(false);
     });
   });
 });

@@ -7,11 +7,14 @@ import { mount, shallow } from 'enzyme';
 import _ from 'underscore';
 Object.assign = require('object-assign');
 import helpers from '../helpers/test/GridPropHelpers';
+import sinon from 'sinon';
+import CellAction from '../CellAction';
 
 let testCellMetaData = {
   selected: {idx: 2, rowIdx: 3},
   dragged: null,
   onCellClick: function() {},
+  onCellFocus: function() {},
   onCellContextMenu: function() {},
   onCellDoubleClick: function() {},
   onCommit: function() {},
@@ -43,6 +46,7 @@ const renderComponent = (extraProps) => {
 };
 
 const onCellClick = jasmine.createSpy();
+const onCellFocus = jasmine.createSpy();
 const onDragHandleDoubleClick = jasmine.createSpy();
 const onCellContextMenu = jasmine.createSpy();
 const onCellDoubleClick = jasmine.createSpy();
@@ -56,6 +60,7 @@ const getCellMetaDataWithEvents = () => {
     testCellMetaData,
     {
       onCellClick,
+      onCellFocus,
       onDragHandleDoubleClick,
       onCellContextMenu,
       onCellDoubleClick
@@ -101,6 +106,11 @@ describe('Cell Tests', () => {
     expect(formatterInstance.props().value).toEqual('Wicklow');
   });
 
+  it('should render children when those are passed', () => {
+    testElement = renderComponent({ children: (<div>Child</div>)});
+    expect(testElement.children().text()).toBe('Child');
+  });
+
   describe('isDraggedCellChanging tests', () => {
     it('should be false if no cell was dragged', () => {
       testElement = renderComponent({
@@ -109,7 +119,7 @@ describe('Cell Tests', () => {
         }
       });
 
-      expect(testElement.node.isDraggedCellChanging(DEFAULT_NEXT_PROPS)).toBeFalsy();
+      expect(testElement.instance().isDraggedCellChanging(DEFAULT_NEXT_PROPS)).toBeFalsy();
     });
 
     it('should be true if the cell is about to be dragged', () => {
@@ -127,7 +137,7 @@ describe('Cell Tests', () => {
         }
       });
 
-      expect(testElement.node.isDraggedCellChanging(nextProps)).toBeTruthy();
+      expect(testElement.instance().isDraggedCellChanging(nextProps)).toBeTruthy();
     });
 
     it('should be true if the cell is currently dragged ', () => {
@@ -139,7 +149,7 @@ describe('Cell Tests', () => {
         }
       });
 
-      expect(testElement.node.isDraggedCellChanging(DEFAULT_NEXT_PROPS)).toBeTruthy();
+      expect(testElement.instance().isDraggedCellChanging(DEFAULT_NEXT_PROPS)).toBeTruthy();
     });
 
     it('should be false if the cell is not currently dragged and not about to be dragged', () => {
@@ -159,7 +169,7 @@ describe('Cell Tests', () => {
         }
       });
 
-      expect(testElement.node.isDraggedCellChanging(nextProps)).toBeFalsy();
+      expect(testElement.instance().isDraggedCellChanging(nextProps)).toBeFalsy();
     });
 
     it('should render null when hidden', () => {
@@ -172,7 +182,7 @@ describe('Cell Tests', () => {
   describe('hasChangedDependentValues tests', () => {
     describe('when column getRowMetaData is not defined', () => {
       it('should return false', () => {
-        expect(testElement.node.hasChangedDependentValues()).toBeFalsy();
+        expect(testElement.instance().hasChangedDependentValues()).toBeFalsy();
       });
     });
 
@@ -188,7 +198,7 @@ describe('Cell Tests', () => {
       it('should return false when the dependentValues are equal', () => {
         let nextProps = propsWithColumnGetRowMetaData;
 
-        expect(testElement.node.hasChangedDependentValues(nextProps)).toBeFalsy();
+        expect(testElement.instance().hasChangedDependentValues(nextProps)).toBeFalsy();
       });
 
       it('should return true when the dependentValues are different', () => {
@@ -197,7 +207,7 @@ describe('Cell Tests', () => {
           propsWithColumnGetRowMetaData,
           { rowData: { name: 'Johnny Test', location: 'Wicklow', likesTesting: 'Every Day!' }});
 
-        expect(testElement.node.hasChangedDependentValues(nextProps)).toBeTruthy();
+        expect(testElement.instance().hasChangedDependentValues(nextProps)).toBeTruthy();
       });
     });
   });
@@ -214,7 +224,7 @@ describe('Cell Tests', () => {
     it('should be true if no cell is selected', () => {
       testElement = renderComponent(getSelectedCellMetadata(undefined));
 
-      expect(testElement.node.isCellSelectionChanging(DEFAULT_NEXT_PROPS)).toBeTruthy();
+      expect(testElement.instance().isCellSelectionChanging(DEFAULT_NEXT_PROPS)).toBeTruthy();
     });
 
     it('should be false if no cell will be selected', () => {
@@ -222,7 +232,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getSelectedCellMetadata(undefined));
 
-      expect(testElement.node.isCellSelectionChanging(nextProps)).toBeTruthy();
+      expect(testElement.instance().isCellSelectionChanging(nextProps)).toBeTruthy();
     });
 
     it('should be true when the next selected cell is the current cell', () => {
@@ -230,7 +240,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getSelectedCellMetadata({ idx: testProps.idx }));
 
-      expect(testElement.node.isCellSelectionChanging(nextProps)).toBeTruthy();
+      expect(testElement.instance().isCellSelectionChanging(nextProps)).toBeTruthy();
     });
 
     it('should be true when the current cell is selected', () => {
@@ -238,7 +248,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getSelectedCellMetadata({ idx: testProps.idx }));
 
-      expect(testElement.node.isCellSelectionChanging(nextProps)).toBeTruthy();
+      expect(testElement.instance().isCellSelectionChanging(nextProps)).toBeTruthy();
     });
 
     it('should be false when current cell is not selected and is not going to be selected', () => {
@@ -246,7 +256,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getSelectedCellMetadata({ idx: testProps.idx - 1}));
 
-      expect(testElement.node.isCellSelectionChanging(nextProps)).toBeFalsy();
+      expect(testElement.instance().isCellSelectionChanging(nextProps)).toBeFalsy();
     });
   });
 
@@ -262,7 +272,7 @@ describe('Cell Tests', () => {
     it('should be false if there is no copied cell', () => {
       testElement = renderComponent(getCopiedCellMetadata(undefined));
 
-      expect(testElement.node.isCopyCellChanging(DEFAULT_NEXT_PROPS)).toBeFalsy();
+      expect(testElement.instance().isCopyCellChanging(DEFAULT_NEXT_PROPS)).toBeFalsy();
     });
 
     it('should be true if the next copied cell is the current cell', () => {
@@ -270,7 +280,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getCopiedCellMetadata({ idx: testProps.idx }));
 
-      expect(testElement.node.isCopyCellChanging(nextProps)).toBeTruthy();
+      expect(testElement.instance().isCopyCellChanging(nextProps)).toBeTruthy();
     });
 
     it('should be true if the current cell is copied', () => {
@@ -278,7 +288,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getCopiedCellMetadata({ idx: testProps.idx + 1}));
 
-      expect(testElement.node.isCopyCellChanging(nextProps)).toBeTruthy();
+      expect(testElement.instance().isCopyCellChanging(nextProps)).toBeTruthy();
     });
 
     it('should be false if the current cell is not copied and is not about to be copied', () => {
@@ -286,7 +296,7 @@ describe('Cell Tests', () => {
 
       let nextProps = Object.assign({}, DEFAULT_NEXT_PROPS, getCopiedCellMetadata({ idx: testProps.idx + 1}));
 
-      expect(testElement.node.isCopyCellChanging(nextProps)).toBeFalsy();
+      expect(testElement.instance().isCopyCellChanging(nextProps)).toBeFalsy();
     });
   });
 
@@ -308,6 +318,7 @@ describe('Cell Tests', () => {
 
     beforeEach(() => {
       onCellClick.calls.reset();
+      onCellFocus.calls.reset();
       onCellDoubleClick.calls.reset();
       onCellContextMenu.calls.reset();
       onDragHandleDoubleClick.calls.reset();
@@ -346,7 +357,9 @@ describe('Cell Tests', () => {
       // force update
       let newValue = 'London';
       testElement.setProps({ value: newValue, selectedColumn: testProps.column });
-      let cellHasUpdateClass = testElement.find('.react-grid-Cell').hasClass(UPDATE_CLASS);
+      // TODO: why the updated class is not reflected when the element is searched using the find method
+      // let cellHasUpdateClass = testElement.find('.react-grid-Cell').hasClass(UPDATE_CLASS);
+      let cellHasUpdateClass = testElement.getDOMNode().className.indexOf(UPDATE_CLASS) > -1;
       expect(cellHasUpdateClass).toBeTruthy();
     });
 
@@ -354,7 +367,7 @@ describe('Cell Tests', () => {
       let cellEvents;
 
       beforeEach(() => {
-        cellEvents = testElement.node.getEvents();
+        cellEvents = testElement.instance().getEvents();
       });
 
       it('should have a onClick event associated', () => {
@@ -383,8 +396,14 @@ describe('Cell Tests', () => {
             expect(onCellClick).toHaveBeenCalled();
           });
 
+          it('should call metaData onCellFocus when it is defined', () => {
+            testElement.simulate('focus');
+
+            expect(onCellFocus).toHaveBeenCalled();
+          });
+
           it('should call metaData onDragHandleDoubleClick when it is defined', () => {
-            let cellInstance = testElement.node;
+            let cellInstance = testElement.instance();
 
             cellInstance.onDragHandleDoubleClick(document.createEvent('Event'));
 
@@ -392,7 +411,7 @@ describe('Cell Tests', () => {
           });
 
           it('should call metaData onCellContextMenu if defined', () => {
-            let cellInstance = testElement.node;
+            let cellInstance = testElement.instance();
 
             cellInstance.onCellContextMenu();
 
@@ -438,7 +457,7 @@ describe('Cell Tests', () => {
         });
 
         testElement = renderComponent({ column, cellMetaData });
-        cellEvents = testElement.node.getEvents();
+        cellEvents = testElement.instance().getEvents();
       });
 
       afterEach(() => {
@@ -458,7 +477,7 @@ describe('Cell Tests', () => {
       });
 
       it('should not add any extra keys', () => {
-        expect(Object.keys(cellEvents).length).toBe(5);
+        expect(Object.keys(cellEvents).length).toBe(6);
       });
 
       it('should call onKeyPress column event', () => {
@@ -494,6 +513,69 @@ describe('Cell Tests', () => {
     });
   });
 
+  describe('Cell checkFocus', () => {
+    const renderCellComponent = (props) => {
+      const wrapper = mount(<Cell {...props} />);
+      return wrapper;
+    };
+    describe('when the cell is selected but not active and the grid is not scrolling', () => {
+      const getProps = ({
+        enableCellAutoFocus = true,
+        getDataGridDOMNode = () => ({})
+      }) => ({
+        column: helpers.columns[0],
+        isScrolling: false,
+        cellMetaData: {
+          selected: { rowIdx: 1, idx: 1 },
+          active: false,
+          enableCellAutoFocus
+        },
+        getDataGridDOMNode,
+        rowIdx: 1,
+        idx: 1,
+        value: 'value'
+      });
+      describe('when enableCellAutoFocus is set to true', () => {
+        const enableCellAutoFocus = true;
+        it('focuses on the cell when document has no active element', () => {
+          const enzymeWrapper = renderCellComponent(getProps({ enableCellAutoFocus }));
+          spyOn(document, 'activeElement').and.returnValue(null);
+          const cellDiv = enzymeWrapper.find('div').at(0).instance();
+          spyOn(cellDiv, 'focus');
+          enzymeWrapper.instance().checkFocus();
+          expect(cellDiv.focus).toHaveBeenCalled();
+        });
+        it('focuses on the cell when document is focused on body and cell autofocus is enabled', () => {
+          const enzymeWrapper = renderCellComponent(getProps({ enableCellAutoFocus }));
+          spyOn(document, 'activeElement').and.returnValue({ nodeName: 'body' });
+          const cellDiv = enzymeWrapper.find('div').at(0).instance();
+          spyOn(cellDiv, 'focus');
+          enzymeWrapper.instance().checkFocus();
+          expect(cellDiv.focus).toHaveBeenCalled();
+        });
+      });
+      describe('when enableCellAutoFocus is set to false', () => {
+        const enableCellAutoFocus = false;
+        it('does not focus on the cell when document has no active element', () => {
+          const enzymeWrapper = renderCellComponent(getProps({ enableCellAutoFocus }));
+          spyOn(document, 'activeElement').and.returnValue(null);
+          const cellDiv = enzymeWrapper.find('div').at(0).instance();
+          spyOn(cellDiv, 'focus');
+          enzymeWrapper.instance().checkFocus();
+          expect(cellDiv.focus).not.toHaveBeenCalled();
+        });
+        it('does not focus on the cell when document is focused on body and cell autofocus is enabled', () => {
+          const enzymeWrapper = renderCellComponent(getProps({ enableCellAutoFocus }));
+          spyOn(document, 'activeElement').and.returnValue({ nodeName: 'body' });
+          const cellDiv = enzymeWrapper.find('div').at(0).instance();
+          spyOn(cellDiv, 'focus');
+          enzymeWrapper.instance().checkFocus();
+          expect(cellDiv.focus).not.toHaveBeenCalled();
+        });
+      });
+    });
+  });
+
   describe('Rendering Cell component', () => {
     const shallowRenderComponent = (props) => {
       const wrapper = shallow(<Cell {...props} />);
@@ -510,6 +592,7 @@ describe('Cell Tests', () => {
         selected: {idx: 2, rowIdx: 3},
         dragged: null,
         onCellClick: jasmine.createSpy(),
+        onCellFocus: jasmine.createSpy(),
         onCellContextMenu: jasmine.createSpy(),
         onCellDoubleClick: jasmine.createSpy(),
         onCommit: jasmine.createSpy(),
@@ -539,6 +622,7 @@ describe('Cell Tests', () => {
         selected: {idx: 2, rowIdx: 3},
         dragged: null,
         onCellClick: jasmine.createSpy(),
+        onCellFocus: jasmine.createSpy(),
         onCellContextMenu: jasmine.createSpy(),
         onCellDoubleClick: jasmine.createSpy(),
         onCommit: jasmine.createSpy(),
@@ -587,7 +671,7 @@ describe('Cell Tests', () => {
     it('passes tabIndex if not available from props, because it is set as a default', () => {
       const wrapper = shallowRenderComponent(requiredProperties);
       const cellDiv = wrapper.find('div').at(0);
-      expect(cellDiv.props().tabIndex).toBe(-1);
+      expect(cellDiv.props().tabIndex).toBe(0);
     });
     it('passes value property', () => {
       const wrapper = shallowRenderComponent(requiredProperties);
@@ -618,6 +702,82 @@ describe('Cell Tests', () => {
       wrapper.instance().setScrollLeft(200);
       const node = wrapper.getDOMNode();
       expect(node.style.transform).toBe('translate3d(200px, 0px, 0px)');
+    });
+  });
+
+  describe('CellActions', () => {
+    const setup = (propsOverride = {}) => {
+      const props = Object.assign({}, {
+        rowIdx: 18,
+        idx: 19,
+        column: helpers.columns[0],
+        row: {key: 'value'},
+        value: 'requiredValue',
+        cellMetaData: {
+          selected: {idx: 2, rowIdx: 3},
+          dragged: null,
+          onCellClick: jasmine.createSpy(),
+          onCellFocus: jasmine.createSpy(),
+          onCellContextMenu: jasmine.createSpy(),
+          onCellDoubleClick: jasmine.createSpy(),
+          onCommit: jasmine.createSpy(),
+          onCommitCancel: jasmine.createSpy(),
+          copied: null,
+          handleDragEnterRow: jasmine.createSpy(),
+          handleTerminateDrag: jasmine.createSpy(),
+          onColumnEvent: jasmine.createSpy()
+        },
+        rowData: helpers.rowGetter(11),
+        expandableOptions: {key: 'reqValue'},
+        isScrolling: false
+      }, propsOverride);
+
+      const wrapper = shallow(<Cell {...props} />);
+      return {
+        wrapper,
+        props
+      };
+    };
+
+    describe('when getCellActions is in cellMetadata', () => {
+      it('should render some CellActions', () => {
+        const action = {icon: 'glpyhicon glyphicon-link', callback: sinon.spy()};
+        const {wrapper} = setup({
+          cellMetaData: {
+            selected: {idx: 2, rowIdx: 3},
+            dragged: null,
+            onCellClick: jasmine.createSpy(),
+            onCellFocus: jasmine.createSpy(),
+            onCellContextMenu: jasmine.createSpy(),
+            onCellDoubleClick: jasmine.createSpy(),
+            onCommit: jasmine.createSpy(),
+            onCommitCancel: jasmine.createSpy(),
+            copied: null,
+            handleDragEnterRow: jasmine.createSpy(),
+            handleTerminateDrag: jasmine.createSpy(),
+            onColumnEvent: jasmine.createSpy(),
+            getCellActions: sinon.stub().returns([action])
+          }
+        });
+
+        const renderedCellActions = wrapper.find(CellAction);
+
+        expect(renderedCellActions.length).toBe(1);
+        expect(renderedCellActions.props()).toEqual({
+          action,
+          isFirst: true
+        });
+      });
+    });
+
+    describe('when getCellActions is not in cellMetadata', () => {
+      it('should not render any CellActions', () => {
+        const {wrapper} = setup();
+
+        const renderedCellActions = wrapper.find(CellAction);
+
+        expect(renderedCellActions.length).toBe(0);
+      });
     });
   });
 });

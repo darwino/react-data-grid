@@ -2,7 +2,7 @@ const React = require('react');
 const ReactDOM = require('react-dom');
 const Grid = require('react-data-grid');
 const { editors: { CheckboxEditor } } = Grid;
-const TestUtils = require('react-addons-test-utils');
+const TestUtils = require('react-dom/test-utils');
 const StubComponent = require('../../../../test/StubComponent');
 const mockStateObject = require('./data/MockStateObject');
 const { mount } = require('enzyme');
@@ -86,7 +86,7 @@ describe('Grid', function() {
     };
 
     this.componentWrapper = this.createComponent();
-    this.component = this.componentWrapper.node;
+    this.component = this.componentWrapper.instance();
   });
 
   it('should create a new instance of Grid', function() {
@@ -109,7 +109,7 @@ describe('Grid', function() {
     describe('for defaults props', function() {
       beforeEach(function() {
         const ToolBarStub = new StubComponent('Toolbar');
-        this.component = this.createComponent({ toolbar: <ToolBarStub /> }).node;
+        this.component = this.createComponent({ toolbar: <ToolBarStub /> }).instance();
         this.toolbarInstance = TestUtils.findRenderedComponentWithType(this.component, ToolBarStub);
         this.toolbarInstance.props.onToggleFilter();
         this.baseGrid = this.getBaseGrid();
@@ -131,7 +131,7 @@ describe('Grid', function() {
     describe('for a given row height prop', function() {
       beforeEach(function() {
         const ToolBarStub = new StubComponent('Toolbar');
-        this.component = this.createComponent({ toolbar: <ToolBarStub />, rowHeight: 40 }).node;
+        this.component = this.createComponent({ toolbar: <ToolBarStub />, rowHeight: 40 }).instance();
         this.toolbarInstance = TestUtils.findRenderedComponentWithType(this.component, ToolBarStub);
         this.toolbarInstance.props.onToggleFilter();
         this.baseGrid = this.getBaseGrid();
@@ -153,7 +153,7 @@ describe('Grid', function() {
     describe('for given row and header height props', function() {
       beforeEach(function() {
         const ToolBarStub = new StubComponent('Toolbar');
-        this.component = this.createComponent({ toolbar: <ToolBarStub />, rowHeight: 40, headerRowHeight: 50, headerFiltersHeight: 60 }).node;
+        this.component = this.createComponent({ toolbar: <ToolBarStub />, rowHeight: 40, headerRowHeight: 50, headerFiltersHeight: 60 }).instance();
         this.toolbarInstance = TestUtils.findRenderedComponentWithType(this.component, ToolBarStub);
         this.toolbarInstance.props.onToggleFilter();
         this.baseGrid = this.getBaseGrid();
@@ -176,7 +176,7 @@ describe('Grid', function() {
   describe('if passed in as props to grid', function() {
     beforeEach(function() {
       const ToolBarStub = new StubComponent('Toolbar');
-      this.component = this.createComponent({ toolbar: <ToolBarStub /> }).node;
+      this.component = this.createComponent({ toolbar: <ToolBarStub /> }).instance();
       this.toolbarInstance = TestUtils.findRenderedComponentWithType(this.component, ToolBarStub);
     });
 
@@ -207,7 +207,7 @@ describe('Grid', function() {
         rowGetter: this.rowGetter,
         rowsCount: this._rows.length,
         width: 300
-      }).node;
+      }).instance();
     });
 
     it('grid should be initialized with selected state of {rowIdx : -1, idx : -1}', function() {
@@ -217,7 +217,7 @@ describe('Grid', function() {
 
   describe('When row selection enabled', function() {
     beforeEach(function() {
-      this.component = this.createComponent({ enableRowSelect: true}).node;
+      this.component = this.createComponent({ enableRowSelect: true}).instance();
       this.baseGrid = this.getBaseGrid();
       this.selectRowCol = this.baseGrid.props.columnMetrics.columns[0];
     });
@@ -233,10 +233,10 @@ describe('Grid', function() {
         let checkboxWrapper = document.createElement('div');
         checkboxWrapper.innerHTML = '<input type="checkbox" value="value" checked="true" />';
         this.checkbox = checkboxWrapper.querySelector('input');
-
-        this.headerCheckbox = this.selectRowCol.headerRenderer.props.children[0];
+        const SelectAll = this.selectRowCol.headerRenderer;
+        this.selectAllWrapper = mount(SelectAll);
         this.fakeEvent = this.buildFakeEvent({ currentTarget: this.checkbox });
-        this.headerCheckbox.props.onChange(this.fakeEvent);
+        this.selectAllWrapper.props().onChange(this.fakeEvent);
       });
 
       it('should select all rows', function() {
@@ -250,7 +250,7 @@ describe('Grid', function() {
       describe('and then unchecking header checkbox', function() {
         beforeEach(function() {
           this.checkbox.checked = false;
-          this.headerCheckbox.props.onChange(this.fakeEvent);
+          this.selectAllWrapper.props().onChange(this.fakeEvent);
         });
 
         it('should deselect all rows', function() {
@@ -302,7 +302,7 @@ describe('Grid', function() {
   describe('Cell Navigation', function() {
     describe('when cell navigation is configured to default, none', function() {
       beforeEach(function() {
-        this.component = this.createComponent({enableCellSelect: true}).node;
+        this.component = this.createComponent({enableCellSelect: true}).instance();
       });
 
       describe('when on last cell in a row', function() {
@@ -310,7 +310,7 @@ describe('Grid', function() {
           this.component.setState({ selected: { idx: 3, rowIdx: 1 } });
         });
         it('selection should stay on cell', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 3, rowIdx: 1 });
         });
       });
@@ -323,12 +323,12 @@ describe('Grid', function() {
           expect(this.component.state.selected).toEqual({ idx: 0, rowIdx: 1 });
         });
       });
-      describe('when row selection is enabled and positionned on cell before last in row', function() {
+      describe('when row selection is enabled and positioned on cell before last in row', function() {
         beforeEach(function() {
           this.component.setState({ selected: { idx: 2, rowIdx: 1 }, enableRowSelect: true });
         });
         it('selection should move to last cell', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 3, rowIdx: 1 });
         });
       });
@@ -336,7 +336,7 @@ describe('Grid', function() {
 
     describe('when cell navigation is configured to change rows', function() {
       beforeEach(function() {
-        this.component = this.createComponent({cellNavigationMode: 'changeRow', enableCellSelect: true}).node;
+        this.component = this.createComponent({cellNavigationMode: 'changeRow', enableCellSelect: true}).instance();
       });
 
       describe('when on last cell in a row that\'s not the last', function() {
@@ -344,7 +344,7 @@ describe('Grid', function() {
           this.component.setState({ selected: { idx: 3, rowIdx: 1 } });
         });
         it('selection should move to first cell in next row', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 0, rowIdx: 2 });
         });
       });
@@ -353,7 +353,7 @@ describe('Grid', function() {
           this.component.setState({ selected: { idx: 3, rowIdx: 999 } });
         });
         it('nothing should happen', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 3, rowIdx: 999 });
         });
       });
@@ -375,12 +375,12 @@ describe('Grid', function() {
           expect(this.component.state.selected).toEqual({ idx: 0, rowIdx: 0 });
         });
       });
-      describe('when row selection is enabled and positionned on cell before last in row', function() {
+      describe('when row selection is enabled and positioned on cell before last in row', function() {
         beforeEach(function() {
           this.component.setState({ selected: { idx: 2, rowIdx: 1 }, enableRowSelect: true });
         });
         it('selection should move to last cell', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 3, rowIdx: 1 });
         });
       });
@@ -388,7 +388,7 @@ describe('Grid', function() {
 
     describe('when cell navigation is configured to loop over cells in row', function() {
       beforeEach(function() {
-        this.component = this.createComponent({cellNavigationMode: 'loopOverRow', enableCellSelect: true}).node;
+        this.component = this.createComponent({cellNavigationMode: 'loopOverRow', enableCellSelect: true}).instance();
       });
 
       describe('when on last cell, looping enabled', function() {
@@ -396,7 +396,7 @@ describe('Grid', function() {
           this.component.setState({ selected: { idx: 3, rowIdx: 1 } });
         });
         it('selection should move to first cell in same row', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 0, rowIdx: 1 });
         });
       });
@@ -405,7 +405,7 @@ describe('Grid', function() {
           this.component.setState({ selected: { idx: 3, rowIdx: 999 } });
         });
         it('selection should move to first cell in same row', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 0, rowIdx: 999 });
         });
       });
@@ -428,12 +428,12 @@ describe('Grid', function() {
         });
       });
 
-      describe('when row selection enabled and positionned on cell before last in row', function() {
+      describe('when row selection enabled and positioned on cell before last in row', function() {
         beforeEach(function() {
           this.component.setState({ selected: { idx: 2, rowIdx: 1 }, enableRowSelect: true });
         });
         it('selection should move to last cell', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.state.selected).toEqual({ idx: 3, rowIdx: 1 });
         });
       });
@@ -445,7 +445,7 @@ describe('Grid', function() {
         const extraProps = { onCellSelected: this.noop, onCellDeSelected: this.noop };
         spyOn(extraProps, 'onCellSelected');
         spyOn(extraProps, 'onCellDeSelected');
-        this.component = this.createComponent(extraProps).node;
+        this.component = this.createComponent(extraProps).instance();
       });
 
       describe('cell is selected', function() {
@@ -453,7 +453,7 @@ describe('Grid', function() {
           this.component.setState({ selected: { rowIdx: 1, idx: 2 } });
         });
         it('deselection handler should have been called', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.props.onCellDeSelected).toHaveBeenCalled();
           expect(this.component.props.onCellDeSelected.calls.mostRecent().args[0]).toEqual({
             rowIdx: 1,
@@ -461,7 +461,7 @@ describe('Grid', function() {
           });
         });
         it('selection handler should have been called', function() {
-          this.simulateGridKeyDown('Tab');
+          this.simulateGridKeyDown('ArrowRight');
           expect(this.component.props.onCellSelected).toHaveBeenCalled();
           expect(this.component.props.onCellSelected.calls.mostRecent().args[0]).toEqual({
             rowIdx: 1,
@@ -489,7 +489,7 @@ describe('Grid', function() {
         onRowsDeselected: function(deselectedRows) {
           self._deselectedRows = deselectedRows;
         }
-      }}).node;
+      }}).instance();
       this.baseGrid = this.getBaseGrid();
       this.selectRowCol = this.baseGrid.props.columnMetrics.columns[0];
     });
@@ -550,7 +550,7 @@ describe('Grid', function() {
           onRowsDeselected: function(deselectedRows) {
             self._deselectedRows = deselectedRows;
           }
-        }}).node;
+        }}).instance();
 
         this.baseGrid = this.getBaseGrid();
         this.selectRowCol = this.baseGrid.props.columnMetrics.columns[0];
@@ -559,9 +559,10 @@ describe('Grid', function() {
         let checkboxWrapper = document.createElement('div');
         checkboxWrapper.innerHTML = '<input type="checkbox" value="value" checked="true" />';
         this.checkbox = checkboxWrapper.querySelector('input');
-        this.headerCheckbox = this.selectRowCol.headerRenderer.props.children[0];
         this.fakeEvent = this.buildFakeEvent({ currentTarget: this.checkbox });
-        this.headerCheckbox.props.onChange(this.fakeEvent);
+        const SelectAll = this.selectRowCol.headerRenderer;
+        this.selectAllWrapper = mount(SelectAll);
+        this.selectAllWrapper.props().onChange(this.fakeEvent);
       });
 
       it('should call rowSelection.onRowsSelected with all rows', function() {
@@ -586,7 +587,7 @@ describe('Grid', function() {
           onRowsDeselected: function(deselectedRows) {
             self._deselectedRows = deselectedRows;
           }
-        }}).node;
+        }}).instance();
 
         this.baseGrid = this.getBaseGrid();
         this.selectRowCol = this.baseGrid.props.columnMetrics.columns[0];
@@ -595,24 +596,20 @@ describe('Grid', function() {
         let checkboxWrapper = document.createElement('div');
         checkboxWrapper.innerHTML = '<input type="checkbox" value="value" checked="true" />';
         this.checkbox = checkboxWrapper.querySelector('input');
-        this.headerCheckbox = this.selectRowCol.headerRenderer.props.children[0];
+        const SelectAll = this.selectRowCol.headerRenderer;
+        this.selectAllWrapper = mount(SelectAll);
       });
 
       it('then unchecking should call rowSelection.onRowsDeselected with all rows', function() {
         this.checkbox.checked = false;
         this.fakeEvent = this.buildFakeEvent({ currentTarget: this.checkbox });
-        this.headerCheckbox.props.onChange(this.fakeEvent);
+        this.selectAllWrapper.props().onChange(this.fakeEvent);
         expect(this._deselectedRows.length).toBe(2);
       });
     });
   });
 
   describe('User Interaction', function() {
-    it('hitting TAB should decrement selected cell index by 1', function() {
-      this.simulateGridKeyDown('Tab');
-      expect(this.component.state.selected).toEqual({ idx: 1, rowIdx: 0 });
-    });
-
     describe('When selected cell is in top corner of grid', function() {
       beforeEach(function() {
         this.component.setState({ selected: { idx: 0, rowIdx: 0 } });
@@ -659,18 +656,7 @@ describe('Grid', function() {
       beforeEach(function() {
         const editableColumn = Object.assign({ editable: true }, this.columns[1]);
         this.columns[1] = editableColumn;
-        this.component = this.createComponent({ columns: this.columns }).node;
-      });
-
-      describe('double click on grid', function() {
-        beforeEach(function() {
-          this.component.setState({ selected: { idx: 1, rowIdx: 1 } });
-          this.getBaseGrid().props.onViewportDoubleClick();
-        });
-
-        it('should activate current selected cell', function() {
-          expect(this.component.state.selected).toEqual(jasmine.objectContaining({ idx: 1, rowIdx: 1, active: true }));
-        });
+        this.component = this.createComponent({ columns: this.columns }).instance();
       });
 
       describe('copy a cell value', function() {
@@ -693,7 +679,7 @@ describe('Grid', function() {
           const vCharacterKeyCode = 118;
           spyOn(this.testProps, 'onCellCopyPaste');
           wrapper.setProps({ onCellCopyPaste: this.testProps.onCellCopyPaste });
-          this.component = wrapper.node;
+          this.component = wrapper.instance();
           this.component.setState({
             textToCopy: 'banana',
             selected: { idx: 1, rowIdx: 5 },
@@ -782,25 +768,6 @@ describe('Grid', function() {
       });
     });
 
-    describe('When column is not editable', function() {
-      beforeEach(function() {
-        const uneditableColumn = Object.assign({ editable: false }, this.columns[1]);
-        this.columns[1] = uneditableColumn;
-        this.component = this.createComponent({ columns: this.columns }).node;
-      });
-
-      describe('double click on grid ', function() {
-        beforeEach(function() {
-          this.component.setState({ selected: { idx: 1, rowIdx: 1 } });
-          this.getBaseGrid().props.onViewportDoubleClick();
-        });
-
-        it('should not activate current selected cell', function() {
-          expect(this.component.state.selected).toEqual({ idx: 1, rowIdx: 1 });
-        });
-      });
-    });
-
     describe('Drag events', function() {
       describe('dragging in grid', function() {
         beforeEach(function() {
@@ -834,7 +801,7 @@ describe('Grid', function() {
           let wrapper = this.createComponent();
           spyOn(this.testProps, 'onCellsDragged');
           wrapper.setProps({ onCellsDragged: this.testProps.onCellsDragged });
-          this.component = wrapper.node;
+          this.component = wrapper.instance();
           this.component.setState({
             selected: { idx: 1, rowIdx: 2 },
             dragged: { idx: 1, rowIdx: 2, value: 'apple', overRowIdx: 6 }
@@ -867,7 +834,7 @@ describe('Grid', function() {
         const newColumns = Object.assign([], this.columns);
         newColumns.splice(2, 0, newColumn);
         wrapper.setProps({ columns: newColumns });
-        this.component = wrapper.node;
+        this.component = wrapper.instance();
         this.columns = this.component.state.columnMetrics.columns;
       });
 
@@ -886,7 +853,7 @@ describe('Grid', function() {
         const newColumns = Object.assign([], this.columns);
         newColumns.splice(1, 1);
         wrapper.setProps({ columns: newColumns });
-        this.component = wrapper.node;
+        this.component = wrapper.instance();
         this.columns = this.component.state.columnMetrics.columns;
       });
 
@@ -897,6 +864,22 @@ describe('Grid', function() {
       it('should no longer include metrics for removed column', function() {
         expect(this.columns[0]).toEqual(jasmine.objectContaining({ key: 'id', name: 'ID', width: 100 }));
         expect(this.columns[1]).toEqual(jasmine.objectContaining({ key: 'count', name: 'Count', width: 100 }));
+      });
+    });
+
+    describe('outside row/cell', function() {
+      beforeEach(function() {
+        this.component.setState({ selected: { idx: 1, rowIdx: 1 } });
+      });
+
+      it('should deselect currently selected cell on click', function() {
+        this.getBaseGrid().props.onViewportClick();
+        expect(this.component.state.selected).toEqual(jasmine.objectContaining({ idx: -1, rowIdx: -1 }));
+      });
+
+      it('should deselect currently selected cell on double-click', function() {
+        this.getBaseGrid().props.onViewportDoubleClick();
+        expect(this.component.state.selected).toEqual(jasmine.objectContaining({ idx: -1, rowIdx: -1 }));
       });
     });
   });
@@ -938,7 +921,7 @@ describe('Grid', function() {
         let wrapper = this.createComponent();
         spyOn(this.testProps, 'onRowUpdated');
         wrapper.setProps({ onRowUpdated: this.testProps.onRowUpdated });
-        this.component = wrapper.node;
+        this.component = wrapper.instance();
         this.component.setState({ selected: { idx: 3, rowIdx: 3, active: true } });
         this.getCellMetaData().onCommit(this.buildFakeCellUodate());
       });
@@ -950,17 +933,6 @@ describe('Grid', function() {
 
       it('should deactivate selected cell', function() {
         expect(this.component.state.selected).toEqual(jasmine.objectContaining({ idx: 3, rowIdx: 3, active: false }));
-      });
-    });
-
-    describe('cell commit after "Tab"', function() {
-      beforeEach(function() {
-        this.component.setState({ selected: { idx: 1, rowIdx: 1, active: true } });
-        this.getCellMetaData().onCommit(this.buildFakeCellUodate({ key: 'Tab' }));
-      });
-
-      it('should select next cell', function() {
-        expect(this.component.state.selected).toEqual({ idx: 2, rowIdx: 1, active: false });
       });
     });
 
@@ -1035,7 +1007,7 @@ describe('Grid', function() {
       const editableColumn = Object.assign({ editable: true }, this.columns[0]);
       this.columns[0] = editableColumn;
       wrapper.setProps({ columns: this.columns });
-      this.component = wrapper.node;
+      this.component = wrapper.instance();
     });
 
     it('should keep original metric information', function() {
@@ -1053,7 +1025,7 @@ describe('Grid', function() {
 
     beforeEach(function() {
       wrapper = this.createComponent();
-      this.component = wrapper.node;
+      this.component = wrapper.instance();
       this.tableElement = ReactDOM.findDOMNode(this.component);
     });
 
@@ -1064,7 +1036,7 @@ describe('Grid', function() {
     describe('providing table width as prop', function() {
       beforeEach(function() {
         wrapper.setProps({ minWidth: 900 });
-        this.component = wrapper.node;
+        this.component = wrapper.instance();
       });
 
       it('should set the width of the table', function() {
@@ -1088,7 +1060,7 @@ describe('Grid', function() {
       this.component = this.createComponent({rowsCount: this.rows.length, rowGetter: rowGetter, columns: columns, onRowClick: function(rowIdx, row, column) {
         self.rowClicked = {row, column};
         self.rowClicks++;
-      }}).node;
+      }}).instance();
     });
 
     it('calls handler when row (cell) clicked', function() {

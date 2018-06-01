@@ -18,7 +18,7 @@ const exampleWrapper = ({
 
   const examplePlaygroundLinkAction = doesExamplePlayGroundLinkExist ? emptyAction : disableLink;
 
-  return React.createClass({
+  return class extends React.Component {
     render() {
       return (
         <div>
@@ -27,12 +27,12 @@ const exampleWrapper = ({
             <a href={examplePlaygroundLink} className={playgroundLinkClass} onClick={examplePlaygroundLinkAction}>Play around with it</a>
           </div>
           <h3>{ exampleName }</h3>
-          <p>{ exampleDescription }</p>
+          <div>{ exampleDescription }</div>
           <WrappedComponent />
         </div>
       );
     }
-  });
+  };
 };
 
 module.exports = exampleWrapper;
