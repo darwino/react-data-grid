@@ -62,7 +62,7 @@ function getNextScrollState(props, getDOMNodeOffsetWidth, scrollTop, scrollLeft,
   // PHIL: in case of variable row height, render everything!
   // Note that this only works with the Darwino grid as the rowRenderer has a special function for this
   // This could be removed when the react-data-grid will support variable rowHeight
-  const renderAllRows = this.props.cellMetaData.grid.props.renderAllRows;
+  const renderAllRows = props.cellMetaData.grid.props.renderAllRows;
 
   const renderedRowsCount = renderAllRows ? length : ceil(height / rowHeight);
   const visibleStart = max(0, floor(scrollTop / rowHeight));
