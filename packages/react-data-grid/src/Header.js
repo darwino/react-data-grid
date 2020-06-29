@@ -8,12 +8,10 @@ const HeaderRow           = require('./HeaderRow');
 const getScrollbarSize  = require('./getScrollbarSize');
 import PropTypes from 'prop-types';
 const createObjectWithProperties = require('./createObjectWithProperties');
-const cellMetaDataShape    = require('./PropTypeShapes/CellMetaDataShape');
+const cellMetaDataShape    = require('common/prop-shapes/CellMetaDataShape');
+import { HeaderRowType } from 'common/constants';
 require('../../../themes/react-data-grid-header.css');
 
-type Column = {
-  width: number
-}
 
 // The list of the propTypes that we want to include in the Header div
 const knownDivPropertyKeys = ['height', 'onScroll'];
@@ -35,13 +33,13 @@ class Header extends React.Component {
     cellMetaData: PropTypes.shape(cellMetaDataShape)
   };
 
-  state: {resizing: any} = {resizing: null};
+  state = {resizing: null};
 
   componentWillReceiveProps() {
     this.setState({resizing: null});
   }
 
-  shouldComponentUpdate(nextProps: any, nextState: any): boolean {
+  shouldComponentUpdate(nextProps, nextState) {
     let update =  !(ColumnMetrics.sameColumns(this.props.columnMetrics.columns, nextProps.columnMetrics.columns, ColumnMetrics.sameColumn))
     || this.props.totalWidth !== nextProps.totalWidth
     || (this.props.headerRows.length !== nextProps.headerRows.length)
@@ -51,7 +49,7 @@ class Header extends React.Component {
     return update;
   }
 
-  onColumnResize = (column: Column, width: number) => {
+  onColumnResize = (column, width) => {
     let state = this.state.resizing || this.props;
 
     let pos = this.getColumnPosition(column);
@@ -73,29 +71,32 @@ class Header extends React.Component {
     }
   };
 
-  onColumnResizeEnd = (column: Column, width: number) => {
+  onColumnResizeEnd = (column, width) => {
     let pos = this.getColumnPosition(column);
     if (pos !== null && this.props.onColumnResize) {
       this.props.onColumnResize(pos, width || column.width);
     }
   };
 
-  getHeaderRows = (): Array<HeaderRow> => {
-    let columnMetrics = this.getColumnMetrics();
-    let resizeColumn;
-    if (this.state.resizing) {
-      resizeColumn = this.state.resizing.column;
-    }
-    let headerRows = [];
-    this.props.headerRows.forEach((row, index) => {
+  setRowRef = (row) => {
+    this.row = row;
+  };
+
+  setFilterRowRef = (filterRow) => {
+    this.filterRow = filterRow;
+  };
+
+  getHeaderRows = () => {
+    const columnMetrics = this.getColumnMetrics();
+    const resizeColumn = this.state.resizing ? this.state.resizing.column : undefined;
+
+    return this.props.headerRows.map((row, index) => {
       // To allow header filters to be visible
-      let rowHeight = 'auto';
-      if (row.rowType === 'filter') {
-        rowHeight = '500px';
-      }
-      let scrollbarSize = getScrollbarSize() > 0 ? getScrollbarSize() : 0;
-      let updatedWidth = isNaN(this.props.totalWidth - scrollbarSize) ? this.props.totalWidth : this.props.totalWidth - scrollbarSize;
-      let headerRowStyle = {
+      const isFilterRow = row.rowType === HeaderRowType.FILTER;
+      const rowHeight = isFilterRow ? '500px' : 'auto';
+      const scrollbarSize = getScrollbarSize() > 0 ? getScrollbarSize() : 0;
+      const updatedWidth = isNaN(this.props.totalWidth - scrollbarSize) ? this.props.totalWidth : this.props.totalWidth - scrollbarSize;
+      const headerRowStyle = {
         position: 'absolute',
         top: this.getCombinedHeaderHeights(index),
         left: 0,
@@ -104,29 +105,30 @@ class Header extends React.Component {
         minHeight: rowHeight
       };
 
-      headerRows.push(<HeaderRow
-        key={row.ref}
-        ref={(node) => { return row.rowType === 'filter' ? this.filterRow = node : this.row = node; }}
-        rowType={row.rowType}
-        style={headerRowStyle}
-        onColumnResize={this.onColumnResize}
-        onColumnResizeEnd={this.onColumnResizeEnd}
-        width={columnMetrics.width}
-        height={row.height || this.props.height}
-        columns={columnMetrics.columns}
-        resizing={resizeColumn}
-        draggableHeaderCell={this.props.draggableHeaderCell}
-        filterable={row.filterable}
-        onFilterChange={row.onFilterChange}
-        onHeaderDrop={this.props.onHeaderDrop}
-        sortColumn={this.props.sortColumn}
-        sortDirection={this.props.sortDirection}
-        onSort={this.props.onSort}
-        onScroll={this.props.onScroll}
-        getValidFilterValues={this.props.getValidFilterValues}
-        />);
+      return (
+        <HeaderRow
+          key={row.rowType}
+          ref={isFilterRow ? this.setFilterRowRef : this.setRowRef}
+          rowType={row.rowType}
+          style={headerRowStyle}
+          onColumnResize={this.onColumnResize}
+          onColumnResizeEnd={this.onColumnResizeEnd}
+          width={columnMetrics.width}
+          height={row.height || this.props.height}
+          columns={columnMetrics.columns}
+          resizing={resizeColumn}
+          draggableHeaderCell={this.props.draggableHeaderCell}
+          filterable={row.filterable}
+          onFilterChange={row.onFilterChange}
+          onHeaderDrop={this.props.onHeaderDrop}
+          sortColumn={this.props.sortColumn}
+          sortDirection={this.props.sortDirection}
+          onSort={this.props.onSort}
+          onScroll={this.props.onScroll}
+          getValidFilterValues={this.props.getValidFilterValues}
+        />
+      );
     });
-    return headerRows;
   };
 
   getColumnMetrics = () => {
@@ -139,7 +141,7 @@ class Header extends React.Component {
     return columnMetrics;
   };
 
-  getColumnPosition = (column: Column): ?number => {
+  getColumnPosition = (column) => {
     let columnMetrics = this.getColumnMetrics();
     let pos = -1;
     columnMetrics.columns.forEach((c, idx) => {
@@ -150,7 +152,7 @@ class Header extends React.Component {
     return pos === -1 ? null : pos;
   };
 
-  getCombinedHeaderHeights = (until: ?number): number => {
+  getCombinedHeaderHeights = (until) => {
     let stopAt = this.props.headerRows.length;
     if (typeof until !== 'undefined') {
       stopAt = until;
@@ -163,14 +165,14 @@ class Header extends React.Component {
     return height;
   };
 
-  getStyle = (): {position: string; height: number} => {
+  getStyle = () => {
     return {
       position: 'relative',
       height: this.getCombinedHeaderHeights()
     };
   };
 
-  setScrollLeft = (scrollLeft: number) => {
+  setScrollLeft = (scrollLeft) => {
     let node = ReactDOM.findDOMNode(this.row);
     node.scrollLeft = scrollLeft;
     this.row.setScrollLeft(scrollLeft);
@@ -190,7 +192,7 @@ class Header extends React.Component {
     this.props.cellMetaData.onCellClick({rowIdx: -1, idx: -1 });
   };
 
-  render(): ?ReactElement {
+  render() {
     let className = joinClasses({
       'react-grid-Header': true,
       'react-grid-Header--resizing': !!this.state.resizing

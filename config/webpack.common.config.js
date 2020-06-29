@@ -1,6 +1,7 @@
 const webpack = require('webpack');
 const argv = require('minimist')(process.argv.slice(2));
 const RELEASE = argv.release;
+const path = require('path');
 
 function getPlugins() {
   const nodeEnv = RELEASE ? '"production"' : '"development"';
@@ -36,7 +37,12 @@ const config = {
       amd: 'react-dom'
     },
     'react/addons': 'React',
-    moment: 'moment'
+    moment: 'moment',
+    immutable: {
+      root: 'Immutable',
+      commonjs: 'immutable',
+      commonjs2: 'immutable'
+    }
   },
   module: {
     loaders: [
@@ -45,6 +51,11 @@ const config = {
     ]
   },
   plugins: getPlugins(),
+  resolve: {
+    alias: {
+      common: path.resolve('packages/common/')
+    }
+  },
   postLoaders: [
     {
       test: /\.js$/,
